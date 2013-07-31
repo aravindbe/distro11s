@@ -30,31 +30,8 @@ sed 's/^root:\*:\(.*\)$/root::\1/' < ${STAGING}/etc/shadow >  ${STAGING}/etc/sha
 mv -f ${STAGING}/etc/shadow.new ${STAGING}/etc/shadow
 
 sudo chmod 777 -R ${STAGING}/root/
-# Set up the sshfs automount if specified
-if [ "${DISTRO11S_SSHFS_AUTOMOUNT_PATH}" != "" -a \
-	"${DISTRO11S_HOST_IP}" != ""  ]; then
-	warn_user "This script installs an ssh key without a password on your dev machine!"
-	AUTH_KEYS=`getent passwd $DISTRO11S_SSHFS_AUTOMOUNT_USER | cut -d: -f6`/.ssh/authorized_keys
-	PUB_KEY=${STAGING}/root/.ssh/id_rsa.pub
 
-	if [ -e ${PUB_KEY} ]; then
-		# The ssh key has already been created, possibly from a previous
-		# invocation of this script.  Don't clog up the developer's
-		# authorized_keys file.
-		grep "`cat ${PUB_KEY}`" ${AUTH_KEYS} > /dev/null
-		if [ "$?" != "0" ]; then
-			cat ${PUB_KEY} >> ${AUTH_KEYS} || exit 1
-		fi
-	else
-		mkdir -p ${STAGING}/root/.ssh/
-		yes | ssh-keygen -t rsa -N "" -f ${STAGING}/root/.ssh/id_rsa || exit 1
-		cat ${PUB_KEY} >> ${AUTH_KEYS} || exit 1
-	fi
-	echo "sshfs -o allow_other,idmap=user,UserKnownHostsFile=/dev/null,StrictHostKeyChecking=no " \
-		"${DISTRO11S_SSHFS_AUTOMOUNT_USER}@${DISTRO11S_HOST_IP}:${DISTRO11S_SSHFS_AUTOMOUNT_PATH} " \
-		"/mnt" > ${STAGING}/etc/rc.local
-fi
-
+# add ssh key
 if [ "${DISTRO11S_SSH_PUB_KEY}" != "" -a -e "${DISTRO11S_SSH_PUB_KEY}" ]; then
 	mkdir -p ${STAGING}/root/.ssh/
 	AUTH_KEYS=${STAGING}/root/.ssh/authorized_keys
